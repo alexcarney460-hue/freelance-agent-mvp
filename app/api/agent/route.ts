@@ -2,15 +2,20 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import * as crypto from 'crypto';
 
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function getSupabaseClient() {
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) {
+    throw new Error('Missing Supabase credentials');
+  }
+  return createClient(url, key);
+}
 
 export async function POST(req: NextRequest) {
   const { verified_capabilities } = await req.json();
 
   try {
+    const supabase = getSupabaseClient();
     const now = Math.floor(Date.now() / 1000);
     const agentId = 'agent_' + crypto.randomBytes(8).toString('hex');
     const apiKey = crypto.randomBytes(32).toString('hex');
@@ -44,6 +49,7 @@ export async function GET(req: NextRequest) {
   const hash = crypto.createHash('sha256').update(apiKey).digest('hex');
 
   try {
+    const supabase = getSupabaseClient();
     const { data, error } = await supabase
       .from('agents')
       .select('*')

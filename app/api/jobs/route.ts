@@ -2,10 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { Job } from '@/api/types';
 
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_ANON_KEY!
-);
+function getSupabaseClient() {
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_ANON_KEY;
+  if (!url || !key) {
+    throw new Error('Missing Supabase credentials');
+  }
+  return createClient(url, key);
+}
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -15,6 +19,7 @@ export async function GET(req: NextRequest) {
   const offset = parseInt(searchParams.get('offset') || '0', 10);
 
   try {
+    const supabase = getSupabaseClient();
     const { data, error } = await supabase
       .from('jobs')
       .select('*')
@@ -39,6 +44,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    const supabase = getSupabaseClient();
     const { data, error } = await supabase
       .from('jobs')
       .insert([{

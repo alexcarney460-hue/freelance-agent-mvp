@@ -2,10 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { verifyApiKey } from '@/api/auth';
 
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function getSupabaseClient() {
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) {
+    throw new Error('Missing Supabase credentials');
+  }
+  return createClient(url, key);
+}
 
 export async function POST(req: NextRequest) {
   const apiKey = req.headers.get('x-api-key');
@@ -20,6 +24,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    const supabase = getSupabaseClient();
     const { data: contract, error: contractErr } = await supabase
       .from('contracts')
       .select('*')

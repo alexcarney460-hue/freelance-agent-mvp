@@ -3,10 +3,14 @@ import { createClient } from '@supabase/supabase-js';
 import { verifyApiKey, validateBidRequest } from '@/api/auth';
 import * as crypto from 'crypto';
 
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function getSupabaseClient() {
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) {
+    throw new Error('Missing Supabase credentials');
+  }
+  return createClient(url, key);
+}
 
 export async function POST(req: NextRequest) {
   const apiKey = req.headers.get('x-api-key');
@@ -22,6 +26,7 @@ export async function POST(req: NextRequest) {
   const { job_id, amount, delivery_days, confidence_score } = body;
 
   try {
+    const supabase = getSupabaseClient();
     // Check agent state
     const { data: agent, error: agentErr } = await supabase
       .from('agents')
@@ -99,6 +104,7 @@ export async function GET(req: NextRequest) {
   if (!jobId) return NextResponse.json({ error: 'Missing job_id' }, { status: 400 });
 
   try {
+    const supabase = getSupabaseClient();
     const { data: bids, error } = await supabase
       .from('bids')
       .select('*')
