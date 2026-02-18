@@ -1,12 +1,17 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function getSupabaseClient() {
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) {
+    throw new Error('Missing Supabase credentials');
+  }
+  return createClient(url, key);
+}
 
 export async function verifyApiKey(apiKey: string): Promise<string | null> {
   const hash = require('crypto').createHash('sha256').update(apiKey).digest('hex');
+  const supabase = getSupabaseClient();
   
   const { data, error } = await supabase
     .from('agents')
